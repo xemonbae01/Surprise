@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tayaba — Will You Marry Me?</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Great+Vibes&display=swap" rel="stylesheet">
+
+  <!-- GSAP & ScrollTrigger for smooth animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <!-- Three.js for the 3D heart -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r155/three.min.js"></script>
+
+  <style>
+    :root{
+      --bg1: linear-gradient(135deg,#ffeef3 0%, #fff8fb 50%, #fff 100%);
+      --accent: #ff7aa2;
+      --gold: #d4af37;
+      --muted:#8b6d7a;
+      --glass: rgba(255,255,255,0.6);
+      --soft-shadow: 0 8px 30px rgba(163,122,147,0.12);
+      --radius: 18px;
+      color-scheme: light;
+    }
+    html,body{height:100%;margin:0;font-family:Montserrat,system-ui,-apple-system,"Segoe UI",Roboto,'Helvetica Neue',Arial;scroll-behavior:smooth;background:var(--bg1);}
+    *{box-sizing:border-box}
+
+    /* Fullscreen intro */
+    .intro{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:1000;background:linear-gradient(180deg, rgba(255,248,250,0.95), rgba(255,240,245,0.6));backdrop-filter: blur(6px);}
+    .intro .brand{font-family:'Playfair Display',serif;font-size:40px;margin-bottom:6px;color:#b24973;letter-spacing:1px}
+    .intro h1{font-family:'Great Vibes',cursive;font-size:58px;margin:0;color:#ff4f8b;text-shadow:0 6px 20px rgba(255,79,139,0.12)}
+    .intro p{margin-top:8px;color:var(--muted)}
+    .start-btn{margin-top:28px;padding:14px 28px;border-radius:30px;border:none;background:linear-gradient(90deg,var(--accent),#ffb6c1);font-weight:700;box-shadow:var(--soft-shadow);cursor:pointer}
+    .start-btn:active{transform:translateY(1px)}
+
+    /* particle canvas */
+    #particles{position:fixed;inset:0;z-index:990;pointer-events:none}
+
+    /* header */
+    header{position:sticky;top:12px;z-index:900;display:flex;justify-content:center}
+    .nav{background:rgba(255,255,255,0.6);padding:8px 14px;border-radius:999px;box-shadow:0 4px 18px rgba(150,100,120,0.08);display:flex;gap:12px;align-items:center}
+    .nav a{font-size:14px;color:#8b6d7a;text-decoration:none}
+
+    /* sections */
+    .container{max-width:1100px;margin:0 auto;padding:60px 20px}
+    section{padding:80px 0}
+
+    /* Hero */
+    .hero{min-height:70vh;display:grid;grid-template-columns:1fr 420px;gap:40px;align-items:center}
+    .hero .copy h2{font-family:'Playfair Display',serif;font-size:42px;margin:0;color:#b53b6d}
+    .hero .copy p{color:var(--muted);line-height:1.6}
+    .hero .cta{display:flex;gap:12px;margin-top:18px}
+    .btn{padding:12px 18px;border-radius:12px;border:none;background:linear-gradient(90deg,#fff,rgba(255,255,255,0.6));box-shadow:var(--soft-shadow);cursor:pointer}
+
+    /* Timeline */
+    .timeline{background:linear-gradient(180deg, rgba(255,250,252,0.7), rgba(255,245,247,0.6));padding:28px;border-radius:20px}
+    .timeline ul{list-style:none;padding:0;margin:0}
+    .timeline li{display:flex;gap:18px;align-items:flex-start;padding:18px 12px;border-bottom:1px dashed rgba(200,150,170,0.12)}
+    .timeline li:last-child{border-bottom:none}
+    .icon{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#fff,#ffeef6);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(200,140,170,0.06)}
+    .icon svg{width:36px;height:36px}
+    .tl-date{font-size:12px;color:var(--muted);}
+    .tl-text{font-weight:600;color:#6a3949}
+
+    /* Typing love letter */
+    .letter{background:linear-gradient(180deg,#fff,#fff8fb);padding:26px;border-radius:16px;box-shadow:var(--soft-shadow)}
+    .typed{font-family:'Playfair Display',serif;font-size:20px;min-height:86px;color:#6b3b46}
+
+    /* Gallery */
+    .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+    .photo{position:relative;border-radius:14px;overflow:hidden;min-height:140px;background:#fdeef5}
+    .photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease}
+    .photo:hover img{transform:scale(1.08)}
+    .caption{position:absolute;left:12px;right:12px;bottom:12px;padding:8px 12px;background:linear-gradient(90deg, rgba(255,255,255,0.6), rgba(255,255,255,0.2));backdrop-filter: blur(3px);border-radius:10px;font-size:13px}
+
+    /* 3D heart canvas */
+    #heart3d{width:100%;height:320px;border-radius:16px;background:linear-gradient(135deg,#fff0f6,#fffdfb);overflow:hidden}
+
+    /* floating elements */
+    .floating > i{position:fixed;pointer-events:none;opacity:0.9}
+
+    /* secret overlay */
+    .secret{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:1200;background:rgba(10,6,8,0.45)}
+    .secret .card{background:linear-gradient(180deg,#fff,#fff6f9);padding:28px;border-radius:16px;max-width:520px;text-align:center}
+    .fireworks{width:100%;height:260px;margin-top:12px}
+
+    /* responsive */
+    @media (max-width:900px){.hero{grid-template-columns:1fr;}.intro h1{font-size:46px}.intro .brand{font-size:28px}}
+
+    footer{padding:36px 0;text-align:center;color:var(--muted)}
+  </style>
+</head>
+<body>
+
+  <!-- Particles canvas -->
+  <canvas id="particles"></canvas>
+
+  <!-- Background music (toggle) -->
+  <audio id="bgm" loop src="" preload="auto"></audio>
+
+  <!-- Intro screen -->
+  <div class="intro" id="intro">
+    <div class="brand">A Journey For</div>
+    <h1>Tayaba</h1>
+    <p>Because every love story deserves a beautiful beginning</p>
+    <div style="display:flex;gap:12px;align-items:center">
+      <button class="start-btn" id="startBtn">Start the Journey</button>
+      <label style="font-size:14px;color:var(--muted);display:flex;align-items:center;gap:8px"><input id="muteToggle" type="checkbox"> Music</label>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <header>
+    <nav class="nav">
+      <a href="#story">Our Story</a>
+      <a href="#timeline">Timeline</a>
+      <a href="#mems">Photos</a>
+      <a href="#heart">Heart</a>
+      <a href="#video">Video</a>
+      <a href="#letter">Letter</a>
+    </nav>
+  </header>
+
+  <main class="container">
+
+    <section class="hero" id="story">
+      <div class="copy">
+        <h2>To Tayaba — my heart's compass</h2>
+        <p>Every moment with you feels like a soft melody. This site is a small universe of memories, music, and hope — crafted to ask the most important question of my life.</p>
+        <div class="cta">
+          <button class="btn" id="openSecret">Unlock a Secret</button>
+          <button class="btn" onclick="document.getElementById('letter').scrollIntoView({behavior:'smooth'})">Read My Letter</button>
+        </div>
+      </div>
+
+      <div>
+        <div id="heart3d"></div>
+      </div>
+    </section>
+
+    <section id="timeline">
+      <div class="timeline">
+        <h3 style="margin-top:0">Our Love Timeline</h3>
+        <ul>
+          <li>
+            <div class="icon">
+              <!-- animated icon -->
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7-4.35-9.5-7.5C-0.5 7.5 6 3 12 7c6-4 12.5.5 9.5 6.5C19 16.65 12 21 12 21z" fill="#ff7aa2"/></svg>
+            </div>
+            <div>
+              <div class="tl-date">January 12, 2019</div>
+              <div class="tl-text">First Coffee Together — You smiled and the world paused.</div>
+            </div>
+          </li>
+
+          <li>
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 2l3 6 6 1.2-4.5 4 1 6L12 17l-5.5 2.2 1-6L3 9.2 9 8 12 2z" fill="#ffd8ea"/></svg>
+            </div>
+            <div>
+              <div class="tl-date">July 7, 2020</div>
+              <div class="tl-text">First Trip — We learned to dance in the rain together.</div>
+            </div>
+          </li>
+
+          <li>
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="#fff0f6" stroke="#ffcad6"/></svg>
+            </div>
+            <div>
+              <div class="tl-date">December 25, 2022</div>
+              <div class="tl-text">Candlelight Night — whispered dreams and a promise to try.</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+        <section id="mems">
+      <h3>Photo Gallery</h3>
+      <div class="gallery" aria-live="polite">
+        <!-- Replace the src attributes with real images -->
+        <div class="photo"><img src="https://ibb.co.com/21f8xp9q?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=placeholder" alt="memory 1"><div class="caption">Our first coffee — that laugh.</div></div>
+        <div class="photo"><img src="https://ibb.co.com/K35xKq8?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=placeholder" alt="memory 2"><div class="caption">Sunset walk — your hand in mine.</div></div>
+        <div class="photo"><img src="https://ibb.co.com/4wZWCF3d?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=placeholder" alt="memory 3"><div class="caption">That silly selfie we still keep.</div></div>
+        <div class="photo"><img src="https://ibb.co.com/S7Zh4p8w?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=placeholder" alt="memory 4"><div class="caption">A night we couldn't forget.</div></div>
+      </div>
+    </section>
+    <section id="letter">
+      <h3>Love Letter</h3>
+      <div class="letter">
+        <div class="typed" id="typedLetter"></div>
+      </div>
+    </section>
+
+    <section id="video">
+      <h3>Personal Message</h3>
+      <div class="letter">
+        <p style="margin:0 0 12px 0;color:var(--muted)">A little video I recorded just for you.</p>
+        <!-- Replace src in iframe with your hosted video (YouTube/MP4) -->
+        <div style="position:relative;padding-top:56.25%;border-radius:12px;overflow:hidden;background:#000;">
+          <iframe id="personalVideo" src="https://imgur.com/a/aWDSeRc" style="position:absolute;inset:0;border:0;width:100%;height:100%" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+    </section>
+
+    <section id="heart">
+      <h3>The Heart</h3>
+      <div class="letter">
+        <p style="margin:0 0 12px 0;color:var(--muted)">A little 3D heart that beats for you.</p>
+        <!-- 3D heart canvas is #heart3d (Three.js) -->
+      </div>
+    </section>
+
+    <section id="countdown">
+      <h3>Countdown to Our Day</h3>
+      <div class="letter" style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
+        <div style="font-weight:700;font-size:28px;color:#b43b68" id="countdownText">00d 00h 00m 00s</div>
+        <div style="color:var(--muted);">Special date: <strong id="specialDateDisplay">December 31, 2025</strong></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div>Thank you for being my light, Tayaba. 💖</div>
+  </footer>
+
+  <!-- Secret overlay -->
+  <div class="secret" id="secret">
+    <div class="card">
+      <h2>Unlock the Secret</h2>
+      <p>Enter the password or solve the puzzle to reveal what's inside.</p>
+      <input id="secretInput" placeholder="enter password or solve..." style="padding:12px;border-radius:10px;border:1px solid #ffdfe8;width:80%;max-width:320px;margin-top:8px">
+      <div style="margin-top:12px;display:flex;gap:10px;justify-content:center">
+        <button class="btn" id="checkSecret">Open</button>
+        <button class="btn" id="closeSecret">Close</button>
+      </div>
+
+      <div class="fireworks" id="fireworksCanvasWrapper"></div>
+
+      <div id="proposalArea" style="display:none;margin-top:12px">
+        <h2 style="font-family:'Great Vibes',cursive;font-size:42px;color:#ff4b8a">Tayaba, will you marry me?</h2>
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:12px">
+          <button class="btn" id="yesBtn">Yes 💖</button>
+          <button class="btn" id="noBtn">No 😅</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    /* ------------------------ Utility & config ------------------------ */
+    const CONFIG = {
+      secretPassword: 'tayaba', // change to your desired password
+      specialDate: new Date('2025-12-31T20:00:00'), // set your special date/time here (UTC/local as needed)
+      bgmSrc: 'https://files.catbox.moe/05wic9.m4a', // paste an ambient music URL (mp3). If empty, music is off by default.
+      heartColor: 0xff6f9b
+    };
+
+    // Attach music
+    const bgm = document.getElementById('bgm');
+    bgm.src = CONFIG.bgmSrc;
+
+    // particles
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let w = canvas.width = innerWidth;
+    let h = canvas.height = innerHeight;
+    const particCount = Math.max(25, Math.floor((w*h)/80000));
+    const parts = [];
+
+    function rand(min,max){return Math.random()*(max-min)+min}
+    function makeParts(){parts.length=0;for(let i=0;i<particCount;i++){parts.push({x:rand(0,w),y:rand(0,h),r:rand(1,3),v:rand(0.1,0.6),a:rand(0.05,0.9),sx:Math.random()<0.5?-1:1})}};
+    makeParts();
+    window.addEventListener('resize',()=>{w=canvas.width=innerWidth;h=canvas.height=innerHeight;makeParts()});
+
+    function draw(){ctx.clearRect(0,0,w,h);for(const p of parts){p.x+=p.v*p.sx;p.y+=Math.sin((p.x+p.y)/200)*0.2; if(p.x< -10) p.x=w+10; if(p.x> w+10) p.x=-10; ctx.beginPath(); ctx.globalAlpha=p.a; ctx.fillStyle='rgba(255,150,185,0.9)'; ctx.ellipse(p.x,p.y,p.r*2,p.r*2,0,0,Math.PI*2); ctx.fill();}requestAnimationFrame(draw)}
+    draw();
+
+    /* intro start + music toggle */
+    const intro = document.getElementById('intro');
+    const startBtn = document.getElementById('startBtn');
+    const muteToggle = document.getElementById('muteToggle');
+    if(CONFIG.bgmSrc) muteToggle.checked = true; // default on if provided
+
+    startBtn.addEventListener('click',()=>{
+      // small intro animation
+      gsap.to('#intro', {opacity:0,y:-40,duration:0.9,ease:'power2.in',onComplete:()=>{intro.style.display='none';}});
+      if(muteToggle.checked && CONFIG.bgmSrc){bgm.play().catch(()=>{});}    
+    });
+
+    muteToggle.addEventListener('change',()=>{if(muteToggle.checked){bgm.play().catch(()=>{});}else{bgm.pause();bgm.currentTime=0}})
+
+    /* Smooth scroll & simple parallax for hero */
+    gsap.registerPlugin(ScrollTrigger);
+    gsap.utils.toArray('section').forEach((sec)=>{
+      gsap.from(sec, {opacity:0,y:40,duration:0.8,scrollTrigger:{trigger:sec, start:'top 85%'}})
+    });
+
+    // parallax on hero image (heart) based on scroll
+    window.addEventListener('scroll', ()=>{
+      const hero = document.querySelector('.hero');
+      if(!hero) return;
+      const rect = hero.getBoundingClientRect();
+      const t = Math.max(0, Math.min(1, 1 - (rect.top/window.innerHeight)));
+      gsap.to('#heart3d', {y: t*20, duration:0.7});
+    })
+
+    /* Timeline icon subtle float */
+    gsap.utils.toArray('.icon').forEach((el,i)=>{gsap.to(el,{y:10,repeat:-1,yoyo:true,duration:3+Math.random()*2,ease:'sine.inOut',delay:i*0.2})})
+
+    /* Typing animation for the love letter */
+    const typedText = `My dearest Tayaba,\n\nFrom the moment I first saw your smile, everything became softer — colors warmer, music sweeter. You've held my hand during storms and danced with me in quiet sunlight. I promise to listen, to learn, to laugh with you every day, and to make a home in your heart.\n\nWith all I am, will you continue this journey with me?`;
+    const typedEl = document.getElementById('typedLetter');
+    function typeText(final, el, speed=28){let i=0; el.innerHTML=''; function step(){if(i<=final.length){const chunk = final.slice(0,i); el.innerHTML = chunk.replace(/\n/g,'<br>') + '<span class="cursor">▌</span>'; i++; setTimeout(step, speed);} else {el.innerHTML = final.replace(/\n/g,'<br>');}} step();}
+    // start typing when letter section reaches view
+    ScrollTrigger.create({trigger:'#letter', start:'top 80%', onEnter:()=>{if(!typedEl.dataset.started){typeText(typedText, typedEl, 28); typedEl.dataset.started='1';}}})
+
+    /* Gallery hover effects already via CSS */
+
+    /* Countdown */
+    const specialDate = CONFIG.specialDate;
+    document.getElementById('specialDateDisplay').innerText = specialDate.toLocaleString();
+    function updateCountdown(){const now = new Date();let diff = Math.max(0, specialDate - now);const d = Math.floor(diff/86400000); diff%=86400000; const h = Math.floor(diff/3600000); diff%=3600000; const m = Math.floor(diff/60000); diff%=60000; const s = Math.floor(diff/1000); document.getElementById('countdownText').innerText = `${String(d).padStart(2,'0')}d ${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;}
+    updateCountdown(); setInterval(updateCountdown,1000);
+
+    /* Secret modal logic */
+    const secret = document.getElementById('secret');
+    const openSecret = document.getElementById('openSecret');
+    const closeSecret = document.getElementById('closeSecret');
+    const checkSecret = document.getElementById('checkSecret');
+    const secretInput = document.getElementById('secretInput');
+    const proposalArea = document.getElementById('proposalArea');
+    const fireworksWrapper = document.getElementById('fireworksCanvasWrapper');
+
+    openSecret.addEventListener('click', ()=>{secret.style.display='flex';});
+    closeSecret.addEventListener('click', ()=>{secret.style.display='none'; stopFireworks(); proposalArea.style.display='none';});
+
+    checkSecret.addEventListener('click', ()=>{const val = (secretInput.value||'').trim().toLowerCase(); if(val===CONFIG.secretPassword.toLowerCase() || val==='i love you'){revealProposal();} else { // small puzzle: find letters hidden in timeline? we'll provide a playful challenge
+        // if they type "coffee" (first memory) also accept
+        if(val==='coffee'||val==='tay'){revealProposal();} else {secretInput.style.animation='shake .4s'; setTimeout(()=>secretInput.style.animation='none',400); secretInput.placeholder='try again or solve the tiny riddle: name of our first drink...'} }});
+
+    function revealProposal(){proposalArea.style.display='block'; startFireworks();}
+
+    /* Yes/No button behaviour */
+    document.getElementById('yesBtn').addEventListener('click', ()=>{document.getElementById('proposalArea').innerHTML = `<h2 style="font-family:'Great Vibes',cursive;font-size:42px;color:#ff4b8a">You said yes! 💍</h2><p style='color:var(--muted)'>I love you more than words — let's celebrate forever.</p>`;});
+    document.getElementById('noBtn').addEventListener('click', ()=>{document.getElementById('proposalArea').innerHTML = `<h2 style="font-family:'Playfair Display',serif;font-size:32px;color:#8b6d7a">A playful no? 😅</h2><p style='color:var(--muted)'>Either way, I'm grateful for you. Let's talk and make more memories.</p>`;});
+
+    /* FIREWORKS (simple canvas particle system) */
+    let fwCanvas, fwCtx, fwW, fwH, fwParts = [], fwRAF;
+    function startFireworks(){if(fwCanvas) return; fwCanvas = document.createElement('canvas'); fwCanvas.style.width='100%'; fwCanvas.style.height='260px'; fwCanvas.width = fireworksWrapper.clientWidth; fwCanvas.height = 260; fireworksWrapper.appendChild(fwCanvas); fwCtx = fwCanvas.getContext('2d'); fwW = fwCanvas.width; fwH = fwCanvas.height; for(let i=0;i<6;i++) spawnFirework(); animateFW();}
+    function stopFireworks(){ if(!fwCanvas) return; cancelAnimationFrame(fwRAF); fireworksWrapper.removeChild(fwCanvas); fwCanvas=null; fwParts.length=0; }
+    function spawnFirework(){ const cx = Math.random()*fwW; const cy = Math.random()*fwH*0.6+40; for(let i=0;i<60;i++){fwParts.push({x:cx,y:cy,vx:(Math.random()-0.5)*6,vy:(Math.random()-0.5)*6,life:Math.random()*80+40,color:`hsl(${Math.random()*360} 80% 65%)`}) }}
+    function animateFW(){ fwCtx.clearRect(0,0,fwW,fwH); for(let p of fwParts){p.x+=p.vx; p.y+=p.vy; p.vy+=0.05; p.life--; fwCtx.globalAlpha = Math.max(0, p.life/100); fwCtx.fillStyle = p.color; fwCtx.beginPath(); fwCtx.arc(p.x,p.y,2.2,0,Math.PI*2); fwCtx.fill(); } fwParts = fwParts.filter(p=>p.life>0); if(Math.random()<0.04) spawnFirework(); fwRAF = requestAnimationFrame(animateFW); }
+
+    /* 3D heart (Three.js) */
+    (function(){
+      const container = document.getElementById('heart3d');
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(45, container.clientWidth/container.clientHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({alpha:true,antialias:true});
+      renderer.setSize(container.clientWidth, container.clientHeight); renderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer.domElement);
+
+      // Heart shape
+      const x = 0, y = 0;
+      const heartShape = new THREE.Shape();
+      heartShape.moveTo(x, y + 0.5);
+      heartShape.bezierCurveTo(x, y + 0.5, x - 0.5, y + 0.9, x - 1.2, y + 0.2);
+      heartShape.bezierCurveTo(x - 1.8, y - 0.6, x - 1.2, y - 1.6, x, y - 1.2);
+      heartShape.bezierCurveTo(x + 1.2, y - 1.6, x + 1.8, y - 0.6, x + 1.2, y + 0.2);
+      heartShape.bezierCurveTo(x + 0.5, y + 0.9, x, y + 0.5, x, y + 0.5);
+
+      const extrudeSettings = { steps: 2, depth: 0.5, bevelEnabled:true, bevelThickness:0.12, bevelSize:0.12, bevelSegments:4 };
+      const geometry = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
+      geometry.center();
+      const material = new THREE.MeshStandardMaterial({color: CONFIG.heartColor, emissive:0x220010, metalness:0.2, roughness:0.4});
+      const heart = new THREE.Mesh(geometry, material);
+      scene.add(heart);
+
+      // lights
+      const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambient);
+      const pLight = new THREE.PointLight(0xff9ab7, 1.1);
+      pLight.position.set(5,5,5); scene.add(pLight);
+
+      camera.position.set(0,0,4.2);
+
+      // beat animation
+      let beat = 0;
+      function animate(){ requestAnimationFrame(animate); beat += 0.04; const scale = 1 + Math.sin(beat*2.1)*0.028; heart.scale.set(scale, scale, scale); heart.rotation.y += 0.005; renderer.render(scene,camera);} animate();
+
+      // resize
+      window.addEventListener('resize', ()=>{ renderer.setSize(container.clientWidth, container.clientHeight); camera.aspect = container.clientWidth/container.clientHeight; camera.updateProjectionMatrix(); });
+    })();
+
+    /* Floating love elements via DOM (hearts, sparkles) */
+    (function(){
+      const frag = document.createDocumentFragment();
+      const colors = ['#ffd7e6','#ffd6f0','#ffc9dd','#fff1f6'];
+      for(let i=0;i<14;i++){ const el = document.createElement('i'); el.style.left = Math.random()*100+'%'; el.style.top = Math.random()*100+'%'; el.style.fontSize = `${8+Math.random()*28}px`; el.innerHTML = '❤'; el.style.color = colors[Math.floor(Math.random()*colors.length)]; el.style.transform = `translate(-50%,-50%) rotate(${Math.random()*360}deg)`; el.style.opacity = 0.8; el.style.transition = 'transform 6s linear'; document.body.appendChild(el); setInterval(()=>{el.style.transform = `translate(-50%,-50%) translateY(${Math.random()*14-7}px) rotate(${Math.random()*360}deg)`}, 1800+Math.random()*2000); }
+    })();
+
+    /* small accessibility: keyboard open secret (S) */
+    document.addEventListener('keydown',(e)=>{if(e.key.toLowerCase()==='s'){secret.style.display='flex'}})
+
+    /* end of script */
+  </script>
+
+</body>
+</html>
